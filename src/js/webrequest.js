@@ -603,17 +603,15 @@ function isSocialWidgetTemporaryUnblock(tabId, requestHost, frameId) {
  * Unblocks a tracker just temporarily on this tab, because the user has clicked the
  * corresponding replacement social widget.
  *
- * @param {Integer} tabId The id of the tab
- * @param {Array} socialWidgetUrls an array of social widget urls
+ * @param {Integer} tabId tab ID
+ * @param {Array} domains widget domains
  */
-function unblockSocialWidgetOnTab(tabId, socialWidgetUrls) {
+function unblockSocialWidgetOnTab(tabId, domains) {
   if (temporarySocialWidgetUnblock[tabId] === undefined) {
     temporarySocialWidgetUnblock[tabId] = [];
   }
-  for (var i in socialWidgetUrls) {
-    var socialWidgetUrl = socialWidgetUrls[i];
-    var socialWidgetHost = window.extractHostFromURL(socialWidgetUrl);
-    temporarySocialWidgetUnblock[tabId].push(socialWidgetHost);
+  for (let i = 0; i < domains.length; i++) {
+    temporarySocialWidgetUnblock[tabId].push(domains[i]);
   }
 }
 
@@ -651,8 +649,7 @@ function dispatcher(request, sender, sendResponse) {
       sendResponse(socialWidgetBlockList);
     }
   } else if (request.unblockSocialWidget) {
-    var socialWidgetUrls = request.buttonUrls;
-    unblockSocialWidgetOnTab(sender.tab.id, socialWidgetUrls);
+    unblockSocialWidgetOnTab(sender.tab.id, request.domains);
     sendResponse();
 
   } else if (request.getReplacementButton) {
