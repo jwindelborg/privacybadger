@@ -35,7 +35,7 @@ var mdfp = require("multiDomainFP");
 var utils = require("utils");
 
 /************ Local Variables *****************/
-var temporarySocialWidgetUnblock = {};
+var temporaryWidgetUnblock = {};
 
 /***************** Blocking Listener Functions **************/
 
@@ -109,7 +109,7 @@ function onBeforeRequest(details) {
 
   // Notify the content script...
   var msg = {
-    replaceSocialWidget: true,
+    replaceWidget: true,
     trackerDomain: requestDomain
   };
   chrome.tabs.sendMessage(tab_id, msg);
@@ -219,7 +219,7 @@ function onBeforeSendHeaders(details) {
 
     // Notify the content script...
     var msg = {
-      replaceSocialWidget: true,
+      replaceWidget: true,
       trackerDomain: requestDomain
     };
     chrome.tabs.sendMessage(tab_id, msg);
@@ -489,7 +489,7 @@ function recordFingerprinting(tabId, msg) {
  */
 function forgetTab(tabId) {
   delete badger.tabData[tabId];
-  delete temporarySocialWidgetUnblock[tabId];
+  delete temporaryWidgetUnblock[tabId];
 }
 
 /**
@@ -501,9 +501,9 @@ function forgetTab(tabId) {
  * @returns {(String|Boolean)} false or the action to take
  */
 function checkAction(tabId, requestHost, frameId) {
-  // Ignore requests from temporarily unblocked social widgets.
+  // Ignore requests from temporarily unblocked widgets.
   // Someone clicked the widget, so let it load.
-  if (isSocialWidgetTemporaryUnblock(tabId, requestHost, frameId)) {
+  if (isWidgetTemporaryUnblock(tabId, requestHost, frameId)) {
     return false;
   }
 
@@ -551,31 +551,53 @@ function _isTabAnExtension(tabId) {
 }
 
 /**
- * Provides the social widget blocking content script with list of social widgets to block
+ * Provides the widget replacing content script with list of widgets to replace.
  *
  * @returns {Object} dict containing the complete list of widgets
  * as well as a mapping to indicate which ones should be replaced
  */
-function getSocialWidgetBlockList() {
+let getWidgetBlockList = (function () {
+  // cached translations
+  let translations = [];
+  // inputs to chrome.i18n.getMessage()
+  const widgetTranslations = [
+    {
+      key: "social_tooltip_pb_has_replaced",
+      placeholders: ["XXX"]
+    },
+    { key: "allow_once" },
+  ];
 
-  // A mapping of individual SocialWidget objects to boolean values that determine
-  // whether the content script should replace that tracker's social buttons
-  var socialWidgetsToReplace = {};
+  return function () {
+    // A mapping of individual SocialWidget objects to boolean values that determine
+    // whether the content script should replace that tracker's button/widget
+    var widgetsToReplace = {};
 
-  badger.socialWidgetList.forEach(function (socialwidget) {
-    // replace blocked widgets only
-    let action = badger.storage.getBestAction(socialwidget.domain);
-    socialWidgetsToReplace[socialwidget.name] = (
-      action == constants.BLOCK ||
-      action == constants.USER_BLOCK
-    );
-  });
+    // optimize translation lookups by doing them just once
+    // the first time they are needed
+    if (!translations.length) {
+      translations = widgetTranslations.reduce((memo, data) => {
+        memo[data.key] = chrome.i18n.getMessage(data.key, data.placeholders);
+        return memo;
+      }, {});
+    }
 
-  return {
-    trackers: badger.socialWidgetList,
-    trackerButtonsToReplace: socialWidgetsToReplace
+    badger.widgetList.forEach(function (widget) {
+      // replace blocked widgets only
+      let action = badger.storage.getBestAction(widget.domain);
+      widgetsToReplace[widget.name] = (
+        action == constants.BLOCK ||
+        action == constants.USER_BLOCK
+      );
+    });
+
+    return {
+      translations,
+      trackers: badger.widgetList,
+      trackerButtonsToReplace: widgetsToReplace
+    };
   };
-}
+}());
 
 /**
  * Check if tab is temporarily unblocked for tracker
@@ -585,8 +607,8 @@ function getSocialWidgetBlockList() {
  * @param {Integer} frameId frame id to check
  * @returns {Boolean} true if in exception list
  */
-function isSocialWidgetTemporaryUnblock(tabId, requestHost, frameId) {
-  var exceptions = temporarySocialWidgetUnblock[tabId];
+function isWidgetTemporaryUnblock(tabId, requestHost, frameId) {
+  var exceptions = temporaryWidgetUnblock[tabId];
   if (exceptions === undefined) {
     return false;
   }
@@ -601,17 +623,17 @@ function isSocialWidgetTemporaryUnblock(tabId, requestHost, frameId) {
 
 /**
  * Unblocks a tracker just temporarily on this tab, because the user has clicked the
- * corresponding replacement social widget.
+ * corresponding replacement widget.
  *
  * @param {Integer} tabId tab ID
  * @param {Array} domains widget domains
  */
-function unblockSocialWidgetOnTab(tabId, domains) {
-  if (temporarySocialWidgetUnblock[tabId] === undefined) {
-    temporarySocialWidgetUnblock[tabId] = [];
+function unblockWidgetOnTab(tabId, domains) {
+  if (temporaryWidgetUnblock[tabId] === undefined) {
+    temporaryWidgetUnblock[tabId] = [];
   }
   for (let i = 0; i < domains.length; i++) {
-    temporarySocialWidgetUnblock[tabId].push(domains[i]);
+    temporaryWidgetUnblock[tabId].push(domains[i]);
   }
 }
 
@@ -644,16 +666,16 @@ function dispatcher(request, sender, sendResponse) {
     sendResponse(cookieBlock);
 
   } else if (request.checkReplaceButton) {
-    if (badger.isPrivacyBadgerEnabled(window.extractHostFromURL(sender.tab.url)) && badger.isSocialWidgetReplacementEnabled()) {
-      var socialWidgetBlockList = getSocialWidgetBlockList();
-      sendResponse(socialWidgetBlockList);
+    if (badger.isPrivacyBadgerEnabled(window.extractHostFromURL(sender.tab.url)) && badger.isWidgetReplacementEnabled()) {
+      let widgetBlockList = getWidgetBlockList();
+      sendResponse(widgetBlockList);
     }
-  } else if (request.unblockSocialWidget) {
-    unblockSocialWidgetOnTab(sender.tab.id, request.domains);
+
+  } else if (request.unblockWidget) {
+    unblockWidgetOnTab(sender.tab.id, request.domains);
     sendResponse();
 
   } else if (request.getReplacementButton) {
-
     let button_path = chrome.runtime.getURL(
       "skin/socialwidgets/" + request.getReplacementButton);
 
@@ -703,8 +725,11 @@ function dispatcher(request, sender, sendResponse) {
 
     sendResponse(badger.isPrivacyBadgerEnabled(tab_host) && isThirdPartyDomain(frame_host, tab_host));
 
-  } else if (request.checkSocialWidgetReplacementEnabled) {
-    sendResponse(badger.isPrivacyBadgerEnabled(window.extractHostFromURL(sender.tab.url)) && badger.isSocialWidgetReplacementEnabled());
+  } else if (request.checkWidgetReplacementEnabled) {
+    sendResponse(
+      badger.isPrivacyBadgerEnabled(window.extractHostFromURL(sender.tab.url)) &&
+      badger.isWidgetReplacementEnabled()
+    );
 
   } else if (request.type == "getPopupData") {
     let tab_id = request.tabId,
@@ -730,7 +755,7 @@ function dispatcher(request, sender, sendResponse) {
       isCheckingDNTPolicyEnabled: badger.isCheckingDNTPolicyEnabled(),
       isDNTSignalEnabled: badger.isDNTSignalEnabled(),
       isLearnInIncognitoEnabled: badger.isLearnInIncognitoEnabled(),
-      isSocialWidgetReplacementEnabled: badger.isSocialWidgetReplacementEnabled(),
+      isWidgetReplacementEnabled: badger.isWidgetReplacementEnabled(),
       origins: badger.storage.getTrackingDomains(),
       showCounter: badger.showCounter(),
       showTrackingDomains: badger.getSettings().getItem("showTrackingDomains"),
