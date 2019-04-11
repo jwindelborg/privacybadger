@@ -491,14 +491,14 @@ Badger.prototype = {
    * Default Privacy Badger settings
    */
   defaultSettings: {
-    checkForDNTPolicy: true,
+    checkForDNTPolicy: false, // AAU
     disabledSites: [],
     hideBlockedElements: true,
     isFirstRun: true,
     learnInIncognito: false,
     migrationLevel: 0,
     seenComic: false,
-    sendDNTSignal: true,
+    sendDNTSignal: false, // AAU
     showCounter: true,
     showIntroPage: true,
     showTrackingDomains: false,
