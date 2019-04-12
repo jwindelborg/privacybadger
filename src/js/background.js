@@ -494,7 +494,7 @@ Badger.prototype = {
     checkForDNTPolicy: false, // AAU
     disabledSites: [],
     hideBlockedElements: true,
-    isFirstRun: true,
+    isFirstRun: false, // AAU
     learnInIncognito: false,
     migrationLevel: 0,
     seenComic: false,

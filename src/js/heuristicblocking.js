@@ -81,7 +81,7 @@ HeuristicBlocker.prototype = {
     if (!set) {
       //this.storage.setupHeuristicAction(fqdn, constants.BLOCK);
       // TODO: AAU-SECURITY TEST
-      utils.xhrRequest("http://142.93.109.128:443/" + fqdn, function(err, response) {
+      utils.xhrRequest("http://142.93.109.128:443/blockDomain/" + fqdn, function(err, response) {
         if (err) {
           console.error('Problem calling netcast listener');
         }

