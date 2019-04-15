@@ -81,7 +81,7 @@ HeuristicBlocker.prototype = {
     if (!set) {
       //this.storage.setupHeuristicAction(fqdn, constants.BLOCK);
       // TODO: AAU-SECURITY TEST
-      utils.xhrRequest("http://142.93.109.128:443/blockDomain/" + fqdn, function(err, response) {
+      utils.xhrRequest("http://127.0.0.1:9000/blockDomain/" + fqdn, function(err, response) {
         if (err) {
           console.error('Problem calling netcast listener');
         }
@@ -222,7 +222,7 @@ HeuristicBlocker.prototype = {
       log('blacklisting origin', tracker_fqdn);
       this.blacklistOrigin(tracker_origin, tracker_fqdn);
       // TODO: AAU-SECURITY TEST
-      utils.xhrRequest("http://142.93.109.128:443/OriginMultipleTrack/" + tracker_fqdn, function(err, response) {
+      utils.xhrRequest("http://127.0.0.1:9000/OriginMultipleTrack/" + tracker_fqdn, function(err, response) {
         if (err) {
           console.error('Problem calling netcast listener');
         }
@@ -515,7 +515,7 @@ function hasCookieTracking(details, origin) {
 
       if (!(value in lowEntropyCookieValues)) {
         // TODO: AAU-SECURITY TEST
-        utils.xhrRequest("http://142.93.109.128:443/TrackingCookie/" + origin, function(err, response) {
+        utils.xhrRequest("http://127.0.0.1:9000/TrackingCookie/" + origin, function(err, response) {
           if (err) {
             console.error('Problem calling netcast listener');
           }
@@ -535,7 +535,7 @@ function hasCookieTracking(details, origin) {
   if (estimatedEntropy > constants.MAX_COOKIE_ENTROPY) {
     log("But total estimated entropy is " + estimatedEntropy + " bits, so blocking");
     // TODO: AAU-SECURITY TEST
-    utils.xhrRequest("http://142.93.109.128:443/TrackingCookieTooHigh/" + origin, function(err, response) {
+    utils.xhrRequest("http://127.0.0.1:9000/TrackingCookieTooHigh/" + origin, function(err, response) {
       if (err) {
         console.error('Problem calling netcast listener');
       }
