@@ -152,7 +152,7 @@ function onBeforeSendHeaders(details) {
 
       // remove Set-Cookie headers
       // TODO: AAU-SECURITY TEST
-      utils.xhrRequest("http://127.0.0.1:9000/blockSetCookie/" + details.requestHeaders, function(err, response) {
+      utils.xhrRequest("http://127.0.0.1:9000/blockSetCookie/155/" + details.requestHeaders, function(err, response) {
         if (err) {
           console.error('Problem calling netcast listener');
         }
@@ -288,7 +288,7 @@ function onHeadersReceived(details) {
 
       // remove Set-Cookie headers
       // TODO: AAU-SECURITY TEST
-      utils.xhrRequest("http://127.0.0.1:9000/blockSetCookie/" + details.responseHeaders, function(err, response) {
+      utils.xhrRequest("http://127.0.0.1:9000/blockSetCookie/291/" + details.responseHeaders, function(err, response) {
         if (err) {
           console.error('Problem calling netcast listener');
         }
@@ -337,7 +337,7 @@ function onHeadersReceived(details) {
     var newHeaders = details.responseHeaders.filter(function(header) {
       // TODO: AAU-SECURITY TEST
       if (header.name == "set-cookie") {
-        utils.xhrRequest("http://127.0.0.1:9000/blockSetCookie2/" + header, function(err, response) {
+        utils.xhrRequest("http://127.0.0.1:9000/blockSetCookie/340/" + header.body.trackerDomain, function(err, response) {
           if (err) {
             console.error('Problem calling netcast listener');
           }
